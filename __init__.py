@@ -9,11 +9,11 @@ from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
                                                                                                                                        
-app = Flask(__name__)                                                                                                                  
-                                                                                                                                       
+app = Flask(__name__)
+
 # Configuration du module JWT
-app.config["JWT_SECRET_KEY"] = "Ma_clé_secrete"  # Ma clée privée
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+app.config["JWT_SECRET_KEY"] = "Ma_clé_secrete"  # Clé secrète pour le JWT
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)  # Token valide 1h
 
 jwt = JWTManager(app)
 
@@ -21,8 +21,7 @@ jwt = JWTManager(app)
 def hello_world():
     return render_template('accueil.html')
 
-# Création d'une route qui vérifie l'utilisateur et retour un Jeton JWT si ok.
-# La fonction create_access_token() est utilisée pour générer un jeton JWT.
+# Route de login qui génère un token JWT
 @app.route("/login", methods=["POST"])
 def login():
     username = request.json.get("username", None)
@@ -33,13 +32,12 @@ def login():
     access_token = create_access_token(identity=username)
     return jsonify(access_token=access_token)
 
-
-# Route protégée par un jeton valide
+# Route protégée nécessitant un JWT valide
 @app.route("/protected", methods=["GET"])
 @jwt_required()
 def protected():
     current_user = get_jwt_identity()
     return jsonify(logged_in_as=current_user), 200
-                                                                                                               
+
 if __name__ == "__main__":
-  app.run(debug=True)
+    app.run(debug=True)
