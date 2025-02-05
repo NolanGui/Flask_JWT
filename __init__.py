@@ -9,9 +9,6 @@ app = Flask(__name__)
 # ======== CONFIGURATION DES COOKIES POUR LE JWT =========
 app.config["JWT_SECRET_KEY"] = "Ma_clé_secrete"  # Ma clé privée
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24)  # Validité de 24 heures
-app.config["JWT_TOKEN_LOCATION"] = ["cookies"]  # Stocker le token dans un Cookie
-app.config["JWT_COOKIE_SECURE"] = False  # En développement (True en production avec HTTPS)
-app.config["JWT_COOKIE_CSRF_PROTECT"] = False  # Désactivé pour simplifier l'exemple
 
 jwt = JWTManager(app)
 
@@ -29,7 +26,7 @@ def login():
     password = request.form.get("password", None)
     
     # Vérification simple de l'utilisateur (pour cet exemple, "test" et "admin" existent)
-    if (username not in ["test", "admin"]) or password != "test":
+    if (username not in ["test", "admin"]) or password not in ["test", "admin"]):
         return jsonify({"msg": "Mauvais utilisateur ou mot de passe"}), 401
 
     # Définir le rôle en fonction du nom d'utilisateur
