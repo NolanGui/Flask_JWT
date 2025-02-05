@@ -12,7 +12,7 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)  # Token valide 1h
 
 jwt = JWTManager(app)
 
-# Simuler une base de données d’utilisateurs avec rôles
+# Simuler une base de données des utilisateurs
 users = {
     "test": {"password": "test", "role": "user"},
     "admin": {"password": "admin", "role": "admin"}
@@ -23,23 +23,23 @@ def home():
     return render_template('accueil.html')
 
 # Route pour afficher la page de connexion
-@app.route("/login", methods=["GET", "POST"])
+@app.route('/login-page', methods=["GET"])
+def login_page():
+    return render_template('login.html')
+
+# Route API de login (renvoie un JWT)
+@app.route("/login", methods=["POST"])
 def login():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+    username = request.form.get("username")
+    password = request.form.get("password")
 
-        # Vérifier si l'utilisateur existe
-        if username not in users or users[username]["password"] != password:
-            return jsonify({"msg": "Mauvais utilisateur ou mot de passe"}), 401
+    if username not in users or users[username]["password"] != password:
+        return jsonify({"msg": "Mauvais utilisateur ou mot de passe"}), 401
 
-        # Générer le token avec le rôle
-        role = users[username]["role"]
-        access_token = create_access_token(identity=username, additional_claims={"role": role})
-
-        return jsonify(access_token=access_token)
-
-    return render_template("login.html")  # Afficher la page de connexion si GET
+    role = users[username]["role"]  # Récupération du rôle
+    access_token = create_access_token(identity=username, additional_claims={"role": role})
+    
+    return jsonify(access_token=access_token)
 
 # Route protégée nécessitant un JWT valide
 @app.route("/protected", methods=["GET"])
@@ -54,7 +54,7 @@ def protected():
 def admin():
     claims = get_jwt()  # Récupère les données du JWT
     if claims.get("role") != "admin":
-        return jsonify({"msg": "Accès interdit"}), 403  # Erreur 403 si pas admin
+        return jsonify({"msg": "Accès interdit"}), 403
 
     return jsonify({"msg": "Bienvenue, administrateur !"})
 
