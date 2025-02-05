@@ -23,7 +23,7 @@ def home():
     return render_template('accueil.html')
 
 # Route pour afficher la page de connexion
-@app.route('/login-page', methods=["GET"])
+@app.route('/login', methods=["GET"])
 def login_page():
     return render_template('login.html')
 
