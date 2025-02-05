@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect, url_for
 from flask_jwt_extended import (
     create_access_token, get_jwt_identity, get_jwt, jwt_required, JWTManager
 )
@@ -12,29 +12,34 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)  # Token valide 1h
 
 jwt = JWTManager(app)
 
+# Simuler une base de données d’utilisateurs avec rôles
+users = {
+    "test": {"password": "test", "role": "user"},
+    "admin": {"password": "admin", "role": "admin"}
+}
+
 @app.route('/')
-def hello_world():
+def home():
     return render_template('accueil.html')
 
-# Route de login qui génère un token JWT avec un rôle
-@app.route("/login", methods=["POST"])
+# Route pour afficher la page de connexion
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    username = request.json.get("username", None)
-    password = request.json.get("password", None)
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
 
-    # Simuler des rôles (dans une vraie app, utiliser une base de données)
-    users = {
-        "test": {"password": "test", "role": "user"},
-        "admin": {"password": "admin", "role": "admin"}
-    }
+        # Vérifier si l'utilisateur existe
+        if username not in users or users[username]["password"] != password:
+            return jsonify({"msg": "Mauvais utilisateur ou mot de passe"}), 401
 
-    if username not in users or users[username]["password"] != password:
-        return jsonify({"msg": "Mauvais utilisateur ou mot de passe"}), 401
+        # Générer le token avec le rôle
+        role = users[username]["role"]
+        access_token = create_access_token(identity=username, additional_claims={"role": role})
 
-    role = users[username]["role"]  # Récupération du rôle
-    access_token = create_access_token(identity=username, additional_claims={"role": role})
-    
-    return jsonify(access_token=access_token)
+        return jsonify(access_token=access_token)
+
+    return render_template("login.html")  # Afficher la page de connexion si GET
 
 # Route protégée nécessitant un JWT valide
 @app.route("/protected", methods=["GET"])
