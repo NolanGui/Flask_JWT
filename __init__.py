@@ -13,6 +13,8 @@ app = Flask(__name__)
                                                                                                                                        
 # Configuration du module JWT
 app.config["JWT_SECRET_KEY"] = "Ma_clé_secrete"  # Ma clée privée
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+
 jwt = JWTManager(app)
 
 @app.route('/')
