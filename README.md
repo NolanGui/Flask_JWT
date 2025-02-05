@@ -92,7 +92,7 @@ Difficulté : Faible (~15 minutes)
 2° - Une fois connecté, depuis de la console SSH, executez les commandes suivantes :  
 Commande 1 : **pip install flask-jwt-extended**  
 Commande 2 : **cp -r ~/.local/lib/python3.12/site-packages/*** **~/www/flask/env/lib/python3.12/site-packages/**    
-Bravo, votre serveur Flask JWT est à présent opérationnel.  
+Bravo, votre serveur Flask JWT est à présent opérationnel !
 
 LES ROUTES (API)
 -------------------------------------------
