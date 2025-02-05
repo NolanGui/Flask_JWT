@@ -1,62 +1,57 @@
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 from flask_jwt_extended import (
-    create_access_token, get_jwt_identity, get_jwt, jwt_required, JWTManager
+    JWTManager, create_access_token, get_jwt_identity, jwt_required, get_jwt, set_access_cookies
 )
 from datetime import timedelta
 
 app = Flask(__name__)
 
-# Configuration du module JWT
-app.config["JWT_SECRET_KEY"] = "Ma_clé_secrete"  # Clé secrète pour le JWT
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)  # Token valide 1h
+# ======== CONFIGURATION DES COOKIES POUR LE JWT =========
+app.config["JWT_SECRET_KEY"] = "Ma_clé_secrete"  # Ma clé privée
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=24)  # Validité de 24 heures
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]  # Stocker le token dans un Cookie
+app.config["JWT_COOKIE_SECURE"] = False  # En développement (True en production avec HTTPS)
+app.config["JWT_COOKIE_CSRF_PROTECT"] = False  # Désactivé pour simplifier l'exemple
 
 jwt = JWTManager(app)
 
-# Simuler une base de données des utilisateurs
-users = {
-    "test": {"password": "test", "role": "user"},
-    "admin": {"password": "admin", "role": "admin"}
-}
-
 @app.route('/')
-def home():
+def index():
     return render_template('accueil.html')
 
-# Route pour afficher la page de connexion
-@app.route('/login', methods=["GET"])
-def login_page():
-    return render_template('login.html')
-
-# Route API de login (renvoie un JWT)
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    username = request.form.get("username")
-    password = request.form.get("password")
-
-    if username not in users or users[username]["password"] != password:
+    if request.method == "GET":
+        return render_template('login.html')
+    
+    # Pour une soumission POST, récupérer les informations du formulaire
+    username = request.form.get("username", None)
+    password = request.form.get("password", None)
+    
+    # Vérification simple de l'utilisateur (pour cet exemple, "test" et "admin" existent)
+    if (username not in ["test", "admin"]) or password != "test":
         return jsonify({"msg": "Mauvais utilisateur ou mot de passe"}), 401
 
-    role = users[username]["role"]  # Récupération du rôle
-    access_token = create_access_token(identity=username, additional_claims={"role": role})
+    # Définir le rôle en fonction du nom d'utilisateur
+    role = "admin" if username == "admin" else "user"
     
-    return jsonify(access_token=access_token)
+    # Ajout du champ "roles" dans le payload du token
+    additional_claims = {"roles": role}
+    access_token = create_access_token(identity=username, additional_claims=additional_claims)
+    
+    # Création de la réponse et stockage du token dans un cookie
+    response = redirect(url_for("welcome")) if username == "test" else jsonify({"msg": "Login réussi"})
+    set_access_cookies(response, access_token)
+    return response
 
-# Route protégée nécessitant un JWT valide
-@app.route("/protected", methods=["GET"])
-@jwt_required()
-def protected():
-    current_user = get_jwt_identity()
-    return jsonify(logged_in_as=current_user), 200
-
-# Route accessible uniquement aux admins
 @app.route("/admin", methods=["GET"])
 @jwt_required()
 def admin():
-    claims = get_jwt()  # Récupère les données du JWT
-    if claims.get("role") != "admin":
-        return jsonify({"msg": "Accès interdit"}), 403
+    claims = get_jwt()
+    if claims.get("roles") != "admin":
+        return jsonify({"msg": "Accès interdit : vous n'avez pas les droits d'administration"}), 403
+    return jsonify({"msg": "Bienvenue dans la zone admin"}), 200
 
-    return jsonify({"msg": "Bienvenue, administrateur !"})
 
 if __name__ == "__main__":
     app.run(debug=True)
